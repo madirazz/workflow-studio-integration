@@ -11,31 +11,29 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.post("/webhook", (req, res) => {
-  const { challenge } = req.body;
+  const { challenge, type } = req.body;
 
-  if (challenge) {
+  if (type === "URL_VERIFICATION" && challenge) {
+    console.log("Webhook verification handshake received");
     res.status(200).json({ challenge });
-    console.log("Webhook handshake successful:", challenge);
   } else {
-    res.status(400).json({ error: "Bad Request: Challenge missing" });
+    res.status(400).json({ error: "Bad Request: Invalid payload" });
   }
 });
 
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Internal Server Error" });
+app.use((req, res) => {
+  console.error(`Route not found: ${req.method} ${req.url}`);
+  res.status(404).json({ error: "Not Found" });
 });
 
-
-app.use((req, res) => {
-  res.status(404).json({ error: "Not Found" });
+app.use((err, req, res, next) => {
+  console.error("Internal Server Error:", err.stack);
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
 app.listen(PORT, () => {
